@@ -4,7 +4,7 @@ English | [한국어](README.ko.md)
 
 A few small Python scripts that **export your Tidal favorites** (tracks, albums, artists, followed playlists, and your own playlists) to **JSON + CSV**, and **restore them** to the same or another Tidal account.
 
-Tidal has no export feature, and third-party tools like Soundiiz require a web login. These scripts call the same internal API the Tidal apps use, so they work **even when you can't log in on the web and only the desktop app still has a live session**.
+Tidal has no export feature, and third-party tools like Soundiiz require a web login. These scripts call the same internal API the Tidal apps use, so they work **even when you can't sign in at all** — as long as the browser or the desktop app still has a live session.
 
 ![Overview](docs/overview.en.svg)
 
@@ -15,14 +15,14 @@ Tidal has no export feature, and third-party tools like Soundiiz require a web l
 ## Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Backup](#backup)
-   - [Run the backup script](#run-the-backup-script)
-3. [Restore](#restore)
-4. [If you can't sign in](#if-you-cant-sign-in)
-   - [A. Copy the token from the browser](#a-copy-the-token-from-the-browser)
-   - [B. Only the desktop app is logged in (mitmproxy)](#b-only-the-desktop-app-is-logged-in-mitmproxy)
-5. [Troubleshooting](#troubleshooting)
-6. [Notes & caveats](#notes--caveats)
+2. [Which case are you in?](#which-case-are-you-in)
+3. [Backup](#backup) — [Case 1: you can sign in](#case-1--you-can-sign-in-to-tidal)
+4. [Restore](#restore)
+5. [When you can't sign in again](#when-you-cant-sign-in-again)
+   - [Case 2: the browser still has a session](#case-2--the-browser-still-has-a-session)
+   - [Case 3: only the desktop app has a session](#case-3--only-the-desktop-app-has-a-session)
+6. [Troubleshooting](#troubleshooting)
+7. [Notes & caveats](#notes--caveats)
 
 ---
 
@@ -38,9 +38,21 @@ cd tidal-favorites-backup
 
 Nothing else to install — the scripts use only the Python standard library.
 
+## Which case are you in?
+
+Everything below hinges on one question: **can you still sign in to the Tidal account?** Find your row first, then jump to that case.
+
+| Your situation | Case | How you get in |
+|---|---|---|
+| You know the password (and can pass 2FA) | **[Case 1](#case-1--you-can-sign-in-to-tidal)** | Just run the script — it opens a sign-in link in your browser |
+| You can't sign in again, but `listen.tidal.com` still loads your collection | **[Case 2](#case-2--the-browser-still-has-a-session)** | Read the token out of the live browser session with DevTools |
+| You can't sign in again and the browser is signed out, but the desktop app still works | **[Case 3](#case-3--only-the-desktop-app-has-a-session)** | Capture the token from the app's traffic with mitmproxy |
+
+Cases 2 and 3 hand you a raw token that lasts a few hours and cannot be refreshed, so finish your backup in one sitting. **In either case, do not sign out** — the session you still have is the only way in.
+
 ## Backup
 
-### Run the backup script
+### Case 1 · You can sign in to Tidal
 
 ```bash
 python3 tidal_backup.py
@@ -54,7 +66,7 @@ The token is saved to `tidal_auth.token` in the current folder, so later runs st
 python3 tidal_auth.py --logout
 ```
 
-> **Can't sign in to this account?** If you've forgotten the password but the desktop app is still logged in, see [If you can't sign in](#if-you-cant-sign-in).
+> **Can't sign in to this account?** You're in case 2 or 3 — see [When you can't sign in again](#when-you-cant-sign-in-again).
 
 Output goes to `./tidal_backup/`:
 
@@ -99,36 +111,40 @@ Run `tidal_backup.py` again afterwards and compare counts to spot anything that 
 
 Favorites are idempotent, so re-running is safe — but your own playlists would be created again, so pass `SKIP=my_playlists` on subsequent runs.
 
-## If you can't sign in
+## When you can't sign in again
 
-Both paths below produce a raw access token. Pass it in `TIDAL_TOKEN` and the scripts will use it instead of signing in:
+A forgotten password, a lost 2FA device, an SSO account you no longer control — signing in is off the table, but a session that already exists somewhere still carries a valid token. Both cases below extract that token; the difference is only *where* the live session lives.
+
+Once you have it, hand it to the scripts with `TIDAL_TOKEN` and they skip signing in entirely:
 
 ```bash
 export TIDAL_TOKEN='eyJ…'      # the part after "Bearer "
 python3 tidal_backup.py
 ```
 
-Such a token is not refreshable and usually expires after a few hours. Treat it like a password: never share it or commit it.
+Such a token cannot be refreshed and usually expires within a few hours, so run the backup right after copying it. Treat it like a password: never share it or commit it.
 
-### A. Copy the token from the browser
+### Case 2 · The browser still has a session
 
-Useful if the device-code link doesn't work for you but web login does.
+`listen.tidal.com` opens straight into your collection even though you couldn't sign in again. The session's token is sitting in its request headers, so you can read it out without logging in — no extra tools needed.
+
+This is also the simplest route if you'd just rather copy a token than use the device-code link.
 
 ![Copying the token from browser DevTools](docs/token-web.en.svg)
 
-1. Log in at <https://listen.tidal.com>.
+1. Open <https://listen.tidal.com>. If your collection loads, the session is alive — **do not sign out**, or you'll lose the only way in.
 2. Open DevTools: `Cmd+Option+I` in Chrome, or **Develop → Show Web Inspector** in Safari (enable the Develop menu under Safari Settings → Advanced if it's missing).
 3. Select the **Network** tab and type `api.tidal` in the filter box.
 4. Click **My Collection** on the page to trigger requests, then click any request in the list.
 5. Under **Headers → Request Headers**, copy the value of `authorization` *without* the `Bearer ` prefix.
 
-### B. Only the desktop app is logged in (mitmproxy)
+### Case 3 · Only the desktop app has a session
 
-For the case where web login fails but the desktop app still has a session. We route the app's traffic through a local proxy and read the token from the request headers.
+The browser is signed out too, and the desktop app is the last place still holding a session. We route the app's traffic through a local proxy and read the token from the request headers.
 
 ![How mitmproxy sits between the app and the API](docs/token-proxy.en.svg)
 
-#### B-1. Install and start mitmproxy
+#### Step 1. Install and start mitmproxy
 
 ```bash
 brew install mitmproxy
@@ -144,7 +160,7 @@ Web server listening at http://127.0.0.1:8081/?token=...
 
 **8080 is the proxy port, 8081 is the web UI.** Opening `localhost:8080` in a browser gives a "Request destination unknown" error, which is expected. Open the UI via the 8081 URL (including the token) printed in the terminal.
 
-#### B-2. Set the system proxy
+#### Step 2. Set the system proxy
 
 **System Settings → Network → (Wi-Fi or Ethernet) → Details… → Proxies**:
 
@@ -168,7 +184,7 @@ curl -v -x http://127.0.0.1:8080 http://example.com
 
 If an `example.com` request shows up in mitmweb, you're good.
 
-#### B-3. Trust the CA certificate
+#### Step 3. Trust the CA certificate
 
 To decrypt HTTPS, macOS must trust mitmproxy's CA certificate. One command does it:
 
@@ -185,13 +201,13 @@ Verify — success if this passes *without* `-k` (a 401 response body is fine):
 curl -x http://127.0.0.1:8080 https://api.tidal.com/v1/ping
 ```
 
-#### B-4. Relaunch Tidal and copy the token
+#### Step 4. Relaunch Tidal and copy the token
 
 1. Quit Tidal completely with `Cmd+Q` and relaunch it (otherwise it keeps the old proxy settings).
 2. Open My Collection and scroll through your favorites.
 3. In mitmweb, click any `api.tidal.com` request → **Request** tab → copy the `authorization` header value without the `Bearer ` prefix.
 
-#### B-5. Turn the proxy back off
+#### Step 5. Turn the proxy back off
 
 Disable the system proxy once you have the token. If you quit mitmweb with the proxy still on, it looks like your internet is down.
 
@@ -212,8 +228,8 @@ networksetup -setsecurewebproxystate Wi-Fi off
 | mitmweb shows `Request destination unknown` | You opened port 8080 in a browser. The UI is on 8081 |
 | `curl -x …` says `Connection refused` | Nothing on 8080. Check `lsof -nP -iTCP:8080 -sTCP:LISTEN`; if something else owns it, run `mitmweb -p 8888` |
 | `curl -x …` hangs / times out | A VPN or security agent is blocking the local proxy. Disable it briefly or use another network |
-| `certificate verify failed` | CA cert not trusted. Redo B-3 |
-| `Cannot modify the System Roots keychain` | Add the cert to the login/System keychain instead, or use the `security` command in B-3 |
+| `certificate verify failed` | CA cert not trusted. Redo step 3 |
+| `Cannot modify the System Roots keychain` | Add the cert to the login/System keychain instead, or use the `security` command in step 3 |
 | No Tidal requests appear in mitmweb | Make sure you fully quit (`Cmd+Q`) and relaunched the app |
 
 ## Notes & caveats

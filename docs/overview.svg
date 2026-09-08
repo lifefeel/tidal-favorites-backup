@@ -19,42 +19,56 @@
 
   <text x="450" y="30" text-anchor="middle" class="h">Tidal 즐겨찾기 백업 · 복원 — 전체 흐름</text>
 
-  <!-- Question -->
-  <rect x="330" y="55" width="240" height="56" class="box acc"/>
-  <text x="450" y="78" text-anchor="middle" class="t">Tidal 계정에</text>
-  <text x="450" y="98" text-anchor="middle" class="t">로그인할 수 있나요?</text>
+  <!-- Q1: can you sign in? -->
+  <rect x="325" y="44" width="250" height="40" class="box acc"/>
+  <text x="450" y="69" text-anchor="middle" class="t">Tidal에 새로 로그인할 수 있나요?</text>
 
-  <!-- Yes branch -->
-  <path d="M330,83 L200,83 L200,140" class="edge"/>
-  <text x="250" y="76" text-anchor="middle" class="lab">예</text>
-  <rect x="80" y="140" width="240" height="70" class="box ok"/>
-  <text x="200" y="165" text-anchor="middle" class="t">기본 · 기기 코드 로그인</text>
-  <text x="200" y="185" text-anchor="middle" class="sub">스크립트가 link.tidal.com 주소를 열어 줌</text>
-  <text x="200" y="201" text-anchor="middle" class="sub">→ 브라우저에서 로그인하면 끝</text>
+  <!-- Case 1 -->
+  <path d="M325,64 L155,64 L155,150" class="edge"/>
+  <text x="238" y="57" text-anchor="middle" class="lab">예</text>
+  <rect x="15" y="150" width="280" height="86" class="box ok"/>
+  <text x="155" y="174" text-anchor="middle" class="t">경우 1 · 기기 코드 로그인</text>
+  <text x="155" y="195" text-anchor="middle" class="sub">python3 tidal_backup.py 실행</text>
+  <text x="155" y="213" text-anchor="middle" class="sub">→ 브라우저에서 로그인하면 끝</text>
 
-  <!-- No branch -->
-  <path d="M570,83 L700,83 L700,140" class="edge"/>
-  <text x="650" y="76" text-anchor="middle" class="lab">아니오 (앱만 로그인됨)</text>
-  <rect x="580" y="140" width="240" height="70" class="box warn"/>
-  <text x="700" y="165" text-anchor="middle" class="t">대체 · mitmproxy로 앱 트래픽 캡처</text>
-  <text x="700" y="185" text-anchor="middle" class="sub">시스템 프록시 + CA 인증서 신뢰</text>
-  <text x="700" y="201" text-anchor="middle" class="sub">→ Tidal 앱 재실행 → 헤더 복사</text>
+  <!-- Q2: where is the live session? -->
+  <path d="M575,64 L725,64 L725,86" class="edge"/>
+  <text x="650" y="57" text-anchor="middle" class="lab">아니오</text>
+  <rect x="590" y="86" width="270" height="34" class="box acc"/>
+  <text x="725" y="108" text-anchor="middle" class="t">세션이 어디에 살아 있나요?</text>
+
+  <!-- Case 2 -->
+  <path d="M690,120 L450,120 L450,150" class="edge"/>
+  <text x="530" y="137" text-anchor="middle" class="lab">웹 브라우저</text>
+  <rect x="310" y="150" width="280" height="86" class="box warn"/>
+  <text x="450" y="174" text-anchor="middle" class="t">경우 2 · 웹 세션에서 복사</text>
+  <text x="450" y="195" text-anchor="middle" class="sub">listen.tidal.com 개발자 도구</text>
+  <text x="450" y="213" text-anchor="middle" class="sub">→ authorization 헤더 복사</text>
+
+  <!-- Case 3 -->
+  <path d="M760,120 L760,150" class="edge"/>
+  <text x="812" y="137" text-anchor="middle" class="lab">데스크톱 앱</text>
+  <rect x="620" y="150" width="265" height="86" class="box warn"/>
+  <text x="752" y="174" text-anchor="middle" class="t">경우 3 · 앱 세션에서 캡처</text>
+  <text x="752" y="195" text-anchor="middle" class="sub">mitmproxy + CA 인증서 신뢰</text>
+  <text x="752" y="213" text-anchor="middle" class="sub">→ 앱 재실행 후 헤더 복사</text>
 
   <!-- Token -->
-  <path d="M200,210 L200,250 L450,250 L450,262" class="edge"/>
-  <path d="M700,210 L700,250 L450,250" class="edge" style="marker-end:none"/>
-  <rect x="340" y="262" width="220" height="44" class="box acc"/>
-  <text x="450" y="290" text-anchor="middle" class="t">액세스 토큰 확보</text>
+  <path d="M155,236 L155,288 L340,288" class="edge"/>
+  <path d="M450,236 L450,268" class="edge"/>
+  <path d="M752,236 L752,288 L560,288" class="edge"/>
+  <rect x="340" y="268" width="220" height="40" class="box acc"/>
+  <text x="450" y="293" text-anchor="middle" class="t">액세스 토큰 확보</text>
 
   <!-- Backup script -->
-  <path d="M450,306 L450,330" class="edge"/>
+  <path d="M450,308 L450,330" class="edge"/>
   <rect x="330" y="330" width="240" height="48" class="box"/>
   <text x="450" y="350" text-anchor="middle" class="t" font-family="Menlo, monospace" font-size="13">python3 tidal_backup.py</text>
   <text x="450" y="368" text-anchor="middle" class="sub">즐겨찾기 전체를 API로 내려받기</text>
 
   <!-- Backup output -->
   <path d="M450,378 L450,402" class="edge"/>
-  <rect x="300" y="402" width="300" height="52" class="box file"/>
+  <rect x="280" y="402" width="340" height="52" class="box file"/>
   <text x="450" y="422" text-anchor="middle" class="t" font-family="Menlo, monospace" font-size="12">tidal_backup/</text>
   <text x="450" y="440" text-anchor="middle" class="sub">tracks · albums · artists · playlists (JSON + CSV)</text>
 
@@ -62,7 +76,7 @@
   <path d="M600,428 L660,428" class="edge"/>
   <rect x="660" y="402" width="200" height="52" class="box"/>
   <text x="760" y="422" text-anchor="middle" class="t" font-family="Menlo, monospace" font-size="13">python3 tidal_restore.py</text>
-  <text x="760" y="440" text-anchor="middle" class="sub">복원할 계정 토큰으로 실행</text>
+  <text x="760" y="440" text-anchor="middle" class="sub">로그인한 계정에 복원</text>
   <rect x="660" y="318" width="200" height="56" class="box acc"/>
   <text x="760" y="340" text-anchor="middle" class="lab">복원할 계정으로 로그인</text>
   <text x="760" y="358" text-anchor="middle" class="lab">(tidal_auth.py --logout 후 재실행)</text>
