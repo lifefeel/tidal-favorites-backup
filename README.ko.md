@@ -36,6 +36,8 @@ git clone https://github.com/lifefeel/tidal-favorites-backup.git
 cd tidal-favorites-backup
 ```
 
+git을 쓰지 않는다면 이 저장소의 GitHub 페이지에서 **Code → Download ZIP** 을 눌러 받은 뒤 압축을 푸세요. 그 폴더에서 터미널을 열면 됩니다 (Finder에서 폴더를 우클릭 → **서비스 → 폴더에서 새로운 터미널 열기**).
+
 그 외에 설치할 것은 없습니다. 표준 라이브러리만 씁니다.
 
 ## 어떤 경우에 해당하나요?
@@ -65,6 +67,8 @@ python3 tidal_backup.py
 ```bash
 python3 tidal_auth.py --logout
 ```
+
+저장된 토큰은 다음 실행 때 그대로 재사용되므로, 스크립트는 내려받기 전에 **지금 어느 계정을 쓰는지** 항상 먼저 출력합니다. 그 줄에 엉뚱한 계정이 찍히면 멈추고 `--logout` 부터 하세요.
 
 > **이 계정으로 로그인할 수 없다면?** 경우 2 또는 3에 해당합니다. [새로 로그인할 수 없는 경우](#새로-로그인할-수-없는-경우)를 보세요.
 
@@ -128,7 +132,7 @@ python3 tidal_backup.py
 
 새로 로그인은 못 했는데 `listen.tidal.com` 을 열면 내 컬렉션이 그대로 보이는 상태입니다. 살아 있는 세션의 토큰이 요청 헤더에 들어 있으므로 로그인 없이 꺼내 쓸 수 있고, 추가로 설치할 도구도 없습니다.
 
-기기 코드 링크보다 토큰 복사가 편한 경우에도 이 방법이 가장 간단합니다.
+경우 1의 기기 코드 링크가 동작하지 않을 때의 대체 수단으로도 같은 절차를 쓸 수 있습니다.
 
 ![브라우저 개발자 도구에서 토큰 복사](docs/token-web.svg)
 
@@ -237,6 +241,7 @@ networksetup -setsecurewebproxystate Wi-Fi off
 - **토큰은 비밀번호입니다.** `tidal_auth.token` 은 `600` 권한으로 만들어지며 `.gitignore` 에 포함되어 있습니다. `TIDAL_TOKEN` 을 직접 지정할 때는 셸 히스토리에 남지 않도록 `read -s TIDAL_TOKEN && export TIDAL_TOKEN` 으로 입력하세요.
 - `tidal_backup/`에는 개인 청취 데이터가 들어 있습니다. `.gitignore`에 포함되어 있지만 커밋 전에 확인하세요.
 - mitmproxy 작업이 끝나면 프록시를 끄고, 필요하면 키체인에서 mitmproxy CA 인증서도 삭제하세요.
+- 로그인에는 OAuth 기기 코드 플로우([RFC 8628](https://datatracker.ietf.org/doc/html/rfc8628))와, Tidal이 자사 TV·기기용 앱에 넣어 배포하는 공개 클라이언트 자격증명을 사용합니다. 다른 오픈소스 Tidal 클라이언트들도 같은 값을 씁니다. 사용자가 아니라 클라이언트 앱을 식별하는 값이라 비밀이 아닙니다. 이 프로젝트는 외부 코드를 포함하지 않으며 Tidal과 아무런 제휴 관계가 없습니다.
 - Tidal의 비공식 API를 사용합니다. Tidal 측 변경으로 언제든 동작하지 않을 수 있습니다.
 - 다른 스트리밍 서비스로 옮기는 것이 목적이면 `tidal_backup/tracks.csv`(ISRC 포함)를 Soundiiz·TuneMyMusic 등의 CSV 가져오기에 넣는 편이 매칭이 정확합니다.
 

@@ -67,13 +67,21 @@ def load_token():
 
 def _store(data):
     """토큰 응답을 저장 형식으로 변환한다."""
+    user = data.get("user") or {}
     return save_token({
         "access_token": data["access_token"],
         "refresh_token": data.get("refresh_token", ""),
         "expires_at": int(time.time()) + int(data.get("expires_in", 0)),
-        "user_id": (data.get("user") or {}).get("userId"),
-        "country_code": (data.get("user") or {}).get("countryCode"),
+        "user_id": user.get("userId"),
+        "country_code": user.get("countryCode"),
+        # 응답에 없을 수도 있으므로 있으면만 저장 — 어느 계정인지 보여 주는 용도
+        "account": user.get("email") or user.get("username") or "",
     })
+
+
+def describe(tok):
+    """저장된 토큰이 어느 계정 것인지 사람이 읽을 수 있게."""
+    return tok.get("account") or f"userId={tok.get('user_id')}" or "알 수 없음"
 
 
 def device_login():
@@ -105,6 +113,7 @@ def device_login():
         if ok:
             print(" 완료!")
             tok = _store(res)
+            print(f"{describe(tok)} 계정으로 로그인했습니다.")
             print(f"토큰을 {TOKEN_FILE} 에 저장했습니다. 다음부터는 로그인 없이 실행됩니다.\n")
             return tok
         if res.get("error") == "expired_token":
@@ -136,6 +145,8 @@ def get_token():
 
     tok = load_token()
     if tok:
+        # 이전 계정 토큰이 조용히 재사용되지 않도록 항상 누구인지 밝힌다
+        print(f"저장된 로그인 사용: {describe(tok)}  (바꾸려면 python3 tidal_auth.py --logout)")
         if tok.get("expires_at", 0) - REFRESH_MARGIN > time.time():
             return tok["access_token"]
         print("토큰이 만료되어 갱신합니다...")

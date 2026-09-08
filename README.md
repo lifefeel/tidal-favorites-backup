@@ -36,6 +36,8 @@ git clone https://github.com/lifefeel/tidal-favorites-backup.git
 cd tidal-favorites-backup
 ```
 
+Not a git user? On this repo's GitHub page click **Code → Download ZIP**, unzip it, and open a terminal in the unzipped folder (in Finder: right-click the folder → **Services → New Terminal at Folder**).
+
 Nothing else to install — the scripts use only the Python standard library.
 
 ## Which case are you in?
@@ -65,6 +67,8 @@ The token is saved to `tidal_auth.token` in the current folder, so later runs st
 ```bash
 python3 tidal_auth.py --logout
 ```
+
+A saved token is reused on the next run, so the script always prints which account it is using before it downloads anything. If that line names the wrong account, stop and run `--logout` first.
 
 > **Can't sign in to this account?** You're in case 2 or 3 — see [When you can't sign in again](#when-you-cant-sign-in-again).
 
@@ -128,7 +132,7 @@ Such a token cannot be refreshed and usually expires within a few hours, so run 
 
 `listen.tidal.com` opens straight into your collection even though you couldn't sign in again. The session's token is sitting in its request headers, so you can read it out without logging in — no extra tools needed.
 
-This is also the simplest route if you'd just rather copy a token than use the device-code link.
+The same steps also work as a fallback if the device-code link in case 1 doesn't work for you.
 
 ![Copying the token from browser DevTools](docs/token-web.en.svg)
 
@@ -237,6 +241,7 @@ networksetup -setsecurewebproxystate Wi-Fi off
 - **The token is a password.** `tidal_auth.token` is created with `600` permissions and is in `.gitignore`. If you set `TIDAL_TOKEN` by hand, keep it out of shell history: `read -s TIDAL_TOKEN && export TIDAL_TOKEN`.
 - `tidal_backup/` contains your personal listening data. It's in `.gitignore`, but double-check before committing.
 - When you're done with mitmproxy, disable the proxy and optionally remove the mitmproxy CA from your keychain.
+- Signing in uses the OAuth device-code flow ([RFC 8628](https://datatracker.ietf.org/doc/html/rfc8628)) with the public client credentials Tidal ships inside its own TV and device apps — the same values other open-source Tidal clients use. They identify the client application, not you, so they are not secrets. This project bundles no third-party code and has no affiliation with Tidal.
 - This uses Tidal's unofficial API and may stop working at any time.
 - If your goal is migrating to another streaming service, feed `tidal_backup/tracks.csv` (with ISRCs) into the CSV import of Soundiiz, TuneMyMusic, etc. — matching is far more accurate that way.
 
