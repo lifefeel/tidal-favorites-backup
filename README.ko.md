@@ -88,13 +88,25 @@ JSON은 API 응답 원본이고 CSV는 사람이 보기 좋게 추린 것입니�
 
 ## 복원
 
-복원은 `./tidal_backup/` 을 읽어 **로그인한 계정**에 씁니다. 저장된 토큰이 백업한 계정 것이라면 먼저 로그아웃하세요.
+복원은 `./tidal_backup/` 을 읽어 **지금 로그인된 계정**에 씁니다. 백업한 계정의 자격증명을 먼저 지우세요.
 
 ```bash
+unset TIDAL_TOKEN                     # 경우 2·3으로 백업했을 때만 필요
 python3 tidal_auth.py --logout        # 백업한 계정에서 로그아웃
 DRY_RUN=1 python3 tidal_restore.py    # 실제 요청 없이 계획만 출력
 python3 tidal_restore.py              # 복원할 계정으로 로그인한 뒤 복원 실행
 ```
+
+스크립트는 아무것도 쓰기 전에 어느 계정에 복원할지 출력하고 `y` 를 기다립니다.
+
+```
+복원 대상: you@example.com (userId=123456789) country=KR
+이 계정에 복원합니다. 계속할까요? [y/N]
+```
+
+**답하기 전에 이 줄을 반드시 확인하세요.** 마지막 확인 지점이며, 엉뚱한 계정에 들어간 즐겨찾기는 손으로 지우는 수밖에 없습니다. 자동화할 때는 `YES=1` 로 프롬프트를 건너뛸 수 있고, 터미널이 없으면 스크립트는 짐작하지 않고 실행을 거부합니다.
+
+> **어느 토큰이 우선인가?** `TIDAL_TOKEN` 환경변수는 저장된 `tidal_auth.token` 보다 **항상 우선**하며, 설정되어 있으면 스크립트가 시작할 때 그 사실을 알려 줍니다. 환경변수가 남아 있는 한 `--logout` 만으로는 계정이 바뀌지 않습니다. `unset` 이 먼저인 이유입니다.
 
 동작:
 
@@ -119,7 +131,7 @@ python3 tidal_restore.py              # 복원할 계정으로 로그인한 뒤 
 
 비밀번호를 잊었거나, 2단계 인증 기기를 분실했거나, 더 이상 쓸 수 없는 SSO 계정 — 로그인은 불가능하지만 이미 만들어진 세션이 어딘가에 남아 있다면 그 안에 유효한 토큰이 들어 있습니다. 아래 두 경우는 그 토큰을 꺼내는 절차이고, 차이는 **살아 있는 세션이 어디에 있느냐** 뿐입니다.
 
-토큰을 얻었으면 `TIDAL_TOKEN` 으로 넘기세요. 스크립트가 로그인을 건너뛰고 그 토큰을 씁니다.
+토큰을 얻었으면 `TIDAL_TOKEN` 으로 넘기세요. 스크립트가 로그인을 건너뛰고 그 토큰을 씁니다. 이 값은 **저장된 로그인을 덮어쓰므로**, 다 쓰고 나면 `unset TIDAL_TOKEN` 하세요. 특히 다른 계정으로 복원하기 전에는 반드시 필요합니다.
 
 ```bash
 export TIDAL_TOKEN='eyJ…'      # Bearer 뒤 문자열
@@ -227,7 +239,7 @@ networksetup -setsecurewebproxystate Wi-Fi off
 | 처음 실행했는데 브라우저가 안 열림 | 출력된 `https://link.tidal.com/…` 주소를 직접 복사해 여세요 |
 | `시간이 초과되었습니다` | 코드는 5분 뒤 만료됩니다. 스크립트를 다시 실행하세요 |
 | `HTTP 401` | 토큰 만료. `python3 tidal_auth.py --logout` 후 재실행. `TIDAL_TOKEN` 사용 중이면 새로 복사 |
-| 엉뚱한 계정에 복원됨 | `python3 tidal_auth.py --logout` 후 복원할 계정으로 다시 로그인 |
+| 복원 대상이 엉뚱한 계정 | 프롬프트에 `n` 을 입력해 취소한 뒤 `unset TIDAL_TOKEN` 과 `python3 tidal_auth.py --logout` 을 하고 다시 실행 |
 | `HTTP 403` / `404` | 다른 계정의 userId로 요청 중이거나 API 호스트가 다름. `TIDAL_API` 확인 |
 | mitmweb에서 `Request destination unknown` | 브라우저로 8080을 직접 연 것. UI는 8081 |
 | `curl -x … ` 가 `Connection refused` | 8080에 mitmproxy가 없음. `lsof -nP -iTCP:8080 -sTCP:LISTEN`으로 확인, 겹치면 `mitmweb -p 8888` |

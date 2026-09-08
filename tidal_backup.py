@@ -12,7 +12,7 @@ import csv, json, os, sys, time
 from pathlib import Path
 import urllib.request, urllib.parse, urllib.error
 
-from tidal_auth import get_token
+from tidal_auth import get_token, account_label
 
 TOKEN = get_token()
 
@@ -41,7 +41,7 @@ def get(path, **params):
 # 1. 세션 정보 → userId, countryCode
 sess = get("sessions")
 uid, cc = sess["userId"], sess.get("countryCode", "KR")
-print(f"userId={uid} country={cc}")
+print(f"백업 대상: {account_label(API, TOKEN, uid)} country={cc}")
 
 
 def fetch_all(path, limit=50):

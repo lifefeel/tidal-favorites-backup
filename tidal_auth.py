@@ -136,10 +136,28 @@ def refresh_token(tok):
     return _store(res)
 
 
+def account_label(api, token, user_id):
+    """users/{id} 에서 사람이 알아볼 수 있는 계정 이름을 얻는다. 실패하면 userId 만."""
+    req = urllib.request.Request(
+        f"{api}/users/{user_id}",
+        headers={"Authorization": f"Bearer {token}", "User-Agent": "Mozilla/5.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            u = json.load(r)
+        name = u.get("email") or u.get("username")
+        return f"{name} (userId={user_id})" if name else f"userId={user_id}"
+    except Exception:
+        # 계정 이름은 편의 기능일 뿐이므로 실패해도 진행을 막지 않는다
+        return f"userId={user_id}"
+
+
 def get_token():
     """실제로 쓸 access token 문자열을 돌려준다. 없으면 로그인을 시작한다."""
     env = os.environ.get("TIDAL_TOKEN")
     if env:
+        # 환경변수가 저장된 로그인을 덮어쓰므로 반드시 알린다 (엉뚱한 계정 사고 방지)
+        print("TIDAL_TOKEN 환경변수의 토큰을 사용합니다 — 저장된 로그인보다 우선합니다.")
+        print("  저장된 로그인을 쓰려면: unset TIDAL_TOKEN")
         env = env.strip()
         return env[7:].strip() if env.lower().startswith("bearer ") else env
 

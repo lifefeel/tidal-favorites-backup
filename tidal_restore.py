@@ -9,13 +9,14 @@ Tidal 즐겨찾기 복원 스크립트 (tidal_backup.py 출력 폴더 기준)
   앱에서 뽑은 토큰을 직접 쓰려면: export TIDAL_TOKEN='eyJ...' 
 옵션 환경변수:
   DRY_RUN=1        실제 요청 없이 무엇을 할지 출력만
+  YES=1            계정 확인 프롬프트를 건너뜀 (자동화용)
   SKIP=tracks,albums   건너뛸 항목 (tracks, albums, artists, playlists, my_playlists)
 """
 import json, os, sys, time
 from pathlib import Path
 import urllib.request, urllib.parse, urllib.error
 
-from tidal_auth import get_token
+from tidal_auth import get_token, account_label
 
 TOKEN = get_token()
 API = os.environ.get("TIDAL_API", "https://api.tidal.com/v1")
@@ -78,7 +79,17 @@ sess = call("GET", "sessions")
 if "_error" in sess:
     sys.exit(f"세션 확인 실패: {sess}")
 UID, CC = sess["userId"], sess.get("countryCode", "KR")
-print(f"복원 대상 userId={UID} country={CC} (source={SRC})")
+print(f"복원 대상: {account_label(API, TOKEN, UID)} country={CC}")
+print(f"복원 원본: {SRC.resolve()}")
+
+# 복원은 되돌리기 어려우므로 쓰기 전에 계정을 확인받는다
+if not DRY:
+    if os.environ.get("YES") == "1":
+        print("YES=1 이므로 확인 없이 진행합니다.")
+    elif not sys.stdin.isatty():
+        sys.exit("확인 입력을 받을 수 없습니다. 위 계정이 맞다면 YES=1 을 붙여 다시 실행하세요.")
+    elif input("이 계정에 복원합니다. 계속할까요? [y/N] ").strip().lower() not in ("y", "yes"):
+        sys.exit("취소했습니다.")
 
 if "tracks" not in SKIP:
     post_batches("tracks", f"users/{UID}/favorites/tracks", "trackIds",

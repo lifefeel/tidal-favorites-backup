@@ -88,13 +88,25 @@ JSON files are the raw API responses; CSVs are a human-readable subset. Restore 
 
 ## Restore
 
-Restore reads `./tidal_backup/` and writes into **whichever account you sign in as** — so sign out first if the token on disk belongs to the source account.
+Restore reads `./tidal_backup/` and writes into **whichever account you're signed in as** — so clear the source account's credentials first.
 
 ```bash
+unset TIDAL_TOKEN                     # only needed if you used case 2 or 3
 python3 tidal_auth.py --logout        # sign out of the source account
 DRY_RUN=1 python3 tidal_restore.py    # print the plan, send nothing
 python3 tidal_restore.py              # sign in as the target account, then restore
 ```
+
+Before writing anything, the script prints the account it is about to restore into and waits for a `y`:
+
+```
+복원 대상: you@example.com (userId=123456789) country=KR
+이 계정에 복원합니다. 계속할까요? [y/N]
+```
+
+**Read that line before answering.** It is the last checkpoint — favorites added to the wrong account have to be removed by hand. In scripts, `YES=1` skips the prompt; without a terminal the script refuses to run rather than guessing.
+
+> **Which token wins?** `TIDAL_TOKEN` always takes precedence over the saved `tidal_auth.token`, and the scripts say so on startup when the environment variable is set. `--logout` alone will not help while it is still exported — that's why `unset` comes first.
 
 What it does:
 
@@ -119,7 +131,7 @@ Favorites are idempotent, so re-running is safe — but your own playlists would
 
 A forgotten password, a lost 2FA device, an SSO account you no longer control — signing in is off the table, but a session that already exists somewhere still carries a valid token. Both cases below extract that token; the difference is only *where* the live session lives.
 
-Once you have it, hand it to the scripts with `TIDAL_TOKEN` and they skip signing in entirely:
+Once you have it, hand it to the scripts with `TIDAL_TOKEN` and they skip signing in entirely. It **overrides any saved login**, so remember to `unset TIDAL_TOKEN` when you're done — especially before restoring into a different account:
 
 ```bash
 export TIDAL_TOKEN='eyJ…'      # the part after "Bearer "
@@ -227,7 +239,7 @@ networksetup -setsecurewebproxystate Wi-Fi off
 | The browser doesn't open on the first run | Copy the printed `https://link.tidal.com/…` address by hand |
 | `You took too long to log in` | The code expires after 5 minutes. Just run the script again |
 | `HTTP 401` | Token expired. Run `python3 tidal_auth.py --logout` and try again; with `TIDAL_TOKEN`, copy a fresh one |
-| Restore wrote into the wrong account | `python3 tidal_auth.py --logout`, then rerun and sign in as the target account |
+| Restore is about to use the wrong account | Answer `n` at the prompt, then `unset TIDAL_TOKEN` and `python3 tidal_auth.py --logout` before rerunning |
 | `HTTP 403` / `404` | Wrong userId for this token, or a different API host. Check `TIDAL_API` |
 | mitmweb shows `Request destination unknown` | You opened port 8080 in a browser. The UI is on 8081 |
 | `curl -x …` says `Connection refused` | Nothing on 8080. Check `lsof -nP -iTCP:8080 -sTCP:LISTEN`; if something else owns it, run `mitmweb -p 8888` |
