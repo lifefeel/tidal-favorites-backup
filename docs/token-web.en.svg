@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" font-family="-apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', Helvetica, Arial, sans-serif" font-size="14">
+  <defs>
+    <style>
+      .win{fill:#fafafa;stroke:#333;stroke-width:1.5;rx:8}
+      .bar{fill:#e5e5e5}
+      .t{fill:#222}
+      .sub{fill:#666;font-size:12px}
+      .h{font-weight:700;font-size:16px;fill:#222}
+      .mono{font-family:Menlo, monospace;font-size:12px}
+      .hl{fill:#fff4e0;stroke:#c05621;stroke-width:1.5}
+      .num{fill:#fff;font-weight:700;font-size:12px}
+      .circ{fill:#2b6cb0}
+      .tab{fill:#fff;stroke:#999;rx:4}
+      .tabon{fill:#2b6cb0;stroke:#2b6cb0;rx:4}
+    </style>
+  </defs>
+
+  <text x="450" y="28" text-anchor="middle" class="h">Method A · Copy the token from browser DevTools</text>
+
+  <!-- browser window -->
+  <rect x="40" y="50" width="820" height="250" class="win"/>
+  <rect x="40" y="50" width="820" height="28" class="bar"/>
+  <circle cx="58" cy="64" r="5" fill="#ff5f57"/><circle cx="74" cy="64" r="5" fill="#febc2e"/><circle cx="90" cy="64" r="5" fill="#28c840"/>
+  <text x="450" y="69" text-anchor="middle" class="mono">listen.tidal.com — logged in to the target account</text>
+
+  <!-- devtools tabs -->
+  <rect x="55" y="90" width="80" height="22" class="tab"/><text x="95" y="105" text-anchor="middle" class="sub">Elements</text>
+  <rect x="140" y="90" width="80" height="22" class="tab"/><text x="180" y="105" text-anchor="middle" class="sub">Console</text>
+  <rect x="225" y="90" width="80" height="22" class="tabon"/><text x="265" y="105" text-anchor="middle" fill="#fff" font-size="12">Network</text>
+  <circle cx="330" cy="101" r="9" class="circ"/><text x="330" y="105" text-anchor="middle" class="num">2</text>
+
+  <!-- filter -->
+  <rect x="55" y="122" width="250" height="22" fill="#fff" stroke="#bbb" rx="4"/>
+  <text x="62" y="137" class="mono" fill="#555">Filter: api.tidal</text>
+  <circle cx="320" cy="133" r="9" class="circ"/><text x="320" y="137" text-anchor="middle" class="num">3</text>
+
+  <!-- request list -->
+  <text x="62" y="170" class="mono">favorites/tracks?countryCode=KR…</text>
+  <rect x="55" y="180" width="250" height="20" class="hl"/>
+  <text x="62" y="194" class="mono">favorites/albums?countryCode=KR…</text>
+  <text x="62" y="218" class="mono">playlists?countryCode=KR…</text>
+  <text x="62" y="242" class="mono">sessions</text>
+  <circle cx="320" cy="190" r="9" class="circ"/><text x="320" y="194" text-anchor="middle" class="num">4</text>
+
+  <!-- headers panel -->
+  <line x1="345" y1="118" x2="345" y2="290" stroke="#ccc"/>
+  <text x="360" y="137" class="t" font-weight="700">Headers</text>
+  <text x="360" y="162" class="sub">Request Headers</text>
+  <text x="360" y="184" class="mono">accept: application/json</text>
+  <rect x="355" y="194" width="490" height="22" class="hl"/>
+  <text x="360" y="209" class="mono" fill="#c05621">authorization: Bearer eyJhbGciOiJSUzI1NiJ9…</text>
+  <circle cx="860" cy="205" r="9" class="circ"/><text x="860" y="209" text-anchor="middle" class="num">5</text>
+  <text x="360" y="234" class="mono">x-tidal-token: …</text>
+  <text x="360" y="272" class="sub">→ copy only the part after "Bearer " into the TIDAL_TOKEN env var</text>
+
+  <!-- legend -->
+  <text x="40" y="320" class="sub">① Log in  ② DevTools (Cmd+Option+I) → Network  ③ filter api.tidal  ④ click My Collection, pick a request  ⑤ copy the authorization header</text>
+</svg>

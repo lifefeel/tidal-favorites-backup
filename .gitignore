@@ -1,0 +1,4 @@
+tidal_backup/
+*.token
+.env
+__pycache__/

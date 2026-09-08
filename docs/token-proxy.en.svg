@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" font-family="-apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', Helvetica, Arial, sans-serif" font-size="14">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+    <style>
+      .box{fill:#fff;stroke:#333;stroke-width:1.5;rx:8}
+      .mitm{fill:#fff4e0;stroke:#c05621}
+      .t{fill:#222}
+      .sub{fill:#666;font-size:12px}
+      .h{font-weight:700;font-size:16px;fill:#222}
+      .edge{stroke:#555;stroke-width:1.5;fill:none;marker-end:url(#arr)}
+      .lab{fill:#444;font-size:12px}
+      .mono{font-family:Menlo, monospace;font-size:12px}
+      .step{fill:#2b6cb0;font-weight:700;font-size:12px}
+    </style>
+  </defs>
+
+  <text x="450" y="30" text-anchor="middle" class="h">Method B · mitmproxy sits between the app and Tidal and reveals the token</text>
+
+  <!-- Tidal app -->
+  <rect x="40" y="120" width="180" height="90" class="box"/>
+  <text x="130" y="150" text-anchor="middle" class="t">Tidal desktop app</text>
+  <text x="130" y="170" text-anchor="middle" class="sub">(still logged in)</text>
+  <text x="130" y="192" text-anchor="middle" class="sub">follows the system proxy</text>
+
+  <!-- mitmproxy -->
+  <rect x="340" y="105" width="220" height="120" class="box mitm"/>
+  <text x="450" y="132" text-anchor="middle" class="t">mitmweb</text>
+  <text x="450" y="152" text-anchor="middle" class="mono">127.0.0.1:8080 (proxy)</text>
+  <text x="450" y="170" text-anchor="middle" class="mono">127.0.0.1:8081 (web UI)</text>
+  <text x="450" y="196" text-anchor="middle" class="sub">decrypts HTTPS and shows</text>
+  <text x="450" y="212" text-anchor="middle" class="sub">the request headers</text>
+
+  <!-- Tidal API -->
+  <rect x="680" y="120" width="180" height="90" class="box"/>
+  <text x="770" y="150" text-anchor="middle" class="t">Tidal API server</text>
+  <text x="770" y="170" text-anchor="middle" class="mono">api.tidal.com</text>
+
+  <!-- arrows -->
+  <path d="M220,150 L340,150" class="edge"/>
+  <text x="280" y="140" text-anchor="middle" class="lab">① request</text>
+  <path d="M560,150 L680,150" class="edge"/>
+  <text x="620" y="140" text-anchor="middle" class="lab">② forwarded</text>
+  <path d="M680,185 L560,185" class="edge"/>
+  <text x="620" y="205" text-anchor="middle" class="lab">③ response</text>
+  <path d="M340,185 L220,185" class="edge"/>
+  <text x="280" y="205" text-anchor="middle" class="lab">④ response</text>
+
+  <!-- captured header -->
+  <path d="M450,225 L450,262" class="edge"/>
+  <rect x="200" y="262" width="500" height="70" class="box"/>
+  <text x="215" y="286" class="mono">GET /v1/users/12345678/favorites/tracks?countryCode=KR</text>
+  <text x="215" y="306" class="mono" fill="#c05621">authorization: Bearer eyJhbGciOiJSUzI1NiJ9…   ← copy this value</text>
+  <text x="215" y="324" class="sub">click a request in mitmweb → Request tab</text>
+
+  <!-- prerequisites -->
+  <text x="40" y="60" class="step">Step 1</text>
+  <text x="90" y="60" class="lab">System Settings → Network → Proxies: HTTP and HTTPS both to 127.0.0.1:8080</text>
+  <text x="40" y="80" class="step">Step 2</text>
+  <text x="90" y="80" class="lab">Add the mitmproxy CA cert to Keychain as "Always Trust" (or HTTPS breaks)</text>
+</svg>
