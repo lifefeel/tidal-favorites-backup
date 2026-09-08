@@ -2,8 +2,11 @@
 """
 Tidal 즐겨찾기 복원 스크립트 (tidal_backup.py 출력 폴더 기준)
 사용법:
-  export TIDAL_TOKEN='eyJ...'      # 복원할 계정의 Bearer 토큰
   python3 tidal_restore.py [백업폴더]   # 기본값 ./tidal_backup
+  처음 실행하면 브라우저 로그인이 열립니다. 반드시 **복원할 계정**으로 로그인하세요.
+  (다른 계정으로 바꾸려면 먼저 python3 tidal_auth.py --logout)
+
+  앱에서 뽑은 토큰을 직접 쓰려면: export TIDAL_TOKEN='eyJ...' 
 옵션 환경변수:
   DRY_RUN=1        실제 요청 없이 무엇을 할지 출력만
   SKIP=tracks,albums   건너뛸 항목 (tracks, albums, artists, playlists, my_playlists)
@@ -12,7 +15,9 @@ import json, os, sys, time
 from pathlib import Path
 import urllib.request, urllib.parse, urllib.error
 
-TOKEN = os.environ.get("TIDAL_TOKEN") or sys.exit("TIDAL_TOKEN 환경변수를 설정하세요.")
+from tidal_auth import get_token
+
+TOKEN = get_token()
 API = os.environ.get("TIDAL_API", "https://api.tidal.com/v1")
 SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "tidal_backup")
 DRY = os.environ.get("DRY_RUN") == "1"

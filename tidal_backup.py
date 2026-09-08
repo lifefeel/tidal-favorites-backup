@@ -2,17 +2,19 @@
 """
 Tidal 즐겨찾기 백업 스크립트
 사용법:
-  export TIDAL_TOKEN='eyJ...'        # 앱에서 뽑은 Bearer 토큰 (Bearer 접두어 제외)
-  python3 tidal_backup.py
+  python3 tidal_backup.py            # 처음 실행하면 브라우저 로그인이 열립니다
 출력: ./tidal_backup/ 아래에 JSON 원본 + CSV
+
+웹 로그인이 불가능한 계정이라면 앱에서 뽑은 토큰을 직접 넘길 수 있습니다:
+  export TIDAL_TOKEN='eyJ...'        # Bearer 접두어 제외
 """
 import csv, json, os, sys, time
 from pathlib import Path
 import urllib.request, urllib.parse, urllib.error
 
-TOKEN = os.environ.get("TIDAL_TOKEN")
-if not TOKEN:
-    sys.exit("TIDAL_TOKEN 환경변수를 설정하세요.")
+from tidal_auth import get_token
+
+TOKEN = get_token()
 
 API = os.environ.get("TIDAL_API", "https://api.tidal.com/v1")
 OUT = Path("tidal_backup"); OUT.mkdir(exist_ok=True)

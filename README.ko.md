@@ -16,28 +16,103 @@ Tidal은 즐겨찾기 내보내기 기능을 제공하지 않고, 서드파티 �
 
 1. [준비물](#준비물)
 2. [백업](#백업)
-   - [A. 웹 로그인이 가능한 경우](#a-웹-로그인이-가능한-경우)
-   - [B. 앱에만 로그인되어 있는 경우 (mitmproxy)](#b-앱에만-로그인되어-있는-경우-mitmproxy)
    - [백업 스크립트 실행](#백업-스크립트-실행)
 3. [복원](#복원)
-4. [문제 해결](#문제-해결)
-5. [주의사항](#주의사항)
+4. [로그인이 불가능한 경우](#로그인이-불가능한-경우)
+   - [A. 브라우저에서 토큰 복사](#a-브라우저에서-토큰-복사)
+   - [B. 앱에만 로그인되어 있는 경우 (mitmproxy)](#b-앱에만-로그인되어-있는-경우-mitmproxy)
+5. [문제 해결](#문제-해결)
+6. [주의사항](#주의사항)
 
 ---
 
 ## 준비물
 
 - Python 3.8 이상 (`python3 --version`)
-- 이 저장소의 `tidal_backup.py`, `tidal_restore.py`
-- Tidal 계정의 **액세스 토큰** — 아래 A 또는 B 방법으로 얻습니다
+- 이 저장소의 `.py` 파일 3개 — 같은 폴더에 두면 됩니다
 
-토큰은 `authorization: Bearer eyJ…` 헤더의 `Bearer ` 뒤에 오는 긴 문자열입니다. 비밀번호와 같은 효력이 있으니 절대 공유하거나 커밋하지 마세요. 보통 몇 시간 뒤 만료됩니다.
+```bash
+git clone https://github.com/lifefeel/tidal-favorites-backup.git
+cd tidal-favorites-backup
+```
+
+그 외에 설치할 것은 없습니다. 표준 라이브러리만 씁니다.
 
 ## 백업
 
-### A. 웹 로그인이 가능한 경우
+### 백업 스크립트 실행
 
-가장 간단합니다. 프록시나 별도 도구가 필요 없습니다.
+```bash
+python3 tidal_backup.py
+```
+
+처음 실행하면 `https://link.tidal.com/ABCDE` 같은 주소가 출력되면서 브라우저가 열립니다. 거기서 Tidal에 로그인하면 스크립트가 알아서 이어집니다. 개발자 도구도, 프록시도, 복사·붙여넣기도 필요 없습니다.
+
+토큰은 현재 폴더의 `tidal_auth.token` 에 저장되므로 다음부터는 바로 실행됩니다. 스스로 갱신하기 때문에 백업 도중 만료될 일도 없습니다. 로그아웃하거나 계정을 바꾸려면:
+
+```bash
+python3 tidal_auth.py --logout
+```
+
+> **이 계정으로 로그인할 수 없다면?** 비밀번호는 모르지만 데스크톱 앱에는 로그인이 살아 있는 경우 [로그인이 불가능한 경우](#로그인이-불가능한-경우)를 보세요.
+
+결과는 `./tidal_backup/` 아래에 생성됩니다.
+
+```
+tidal_backup/
+├── tracks.json / tracks.csv          # 즐겨찾기 트랙 (id, 제목, 아티스트, 앨범, ISRC, 추가일)
+├── albums.json / albums.csv          # 즐겨찾기 앨범 (UPC 포함)
+├── artists.json / artists.csv        # 즐겨찾기 아티스트
+├── playlists.json / playlists.csv    # 즐겨찾기(팔로우)한 플레이리스트
+├── my_playlists.json / .csv          # 내가 만든 플레이리스트 목록
+└── playlist_tracks/                  # 내 플레이리스트별 트랙 목록
+```
+
+JSON은 API 응답 원본이고 CSV는 사람이 보기 좋게 추린 것입니다. 복원에는 JSON을 씁니다.
+
+## 복원
+
+복원은 `./tidal_backup/` 을 읽어 **로그인한 계정**에 씁니다. 저장된 토큰이 백업한 계정 것이라면 먼저 로그아웃하세요.
+
+```bash
+python3 tidal_auth.py --logout        # 백업한 계정에서 로그아웃
+DRY_RUN=1 python3 tidal_restore.py    # 실제 요청 없이 계획만 출력
+python3 tidal_restore.py              # 복원할 계정으로 로그인한 뒤 복원 실행
+```
+
+동작:
+
+- 트랙·앨범·아티스트 즐겨찾기를 50개씩 묶어 추가합니다. 백업이 최신순이므로 뒤집어서 오래된 것부터 넣어 상대 순서를 유지합니다 (추가 날짜 자체는 복원 시점으로 바뀝니다).
+- 팔로우한 플레이리스트는 uuid로 다시 팔로우합니다.
+- 내가 만든 플레이리스트는 같은 제목으로 새로 만들고 트랙을 채웁니다. 원래 uuid는 유지되지 않습니다.
+- 현재 지역에서 사라진 곡은 건너뜁니다.
+
+옵션:
+
+| 환경변수 | 설명 |
+|---|---|
+| `DRY_RUN=1` | 요청을 보내지 않고 무엇을 할지만 출력 |
+| `SKIP=tracks,albums,artists,playlists,my_playlists` | 지정한 항목은 건너뜀 (쉼표 구분) |
+| `TIDAL_API` | 기본값 `https://api.tidal.com/v1` |
+
+복원 후 `tidal_backup.py`를 한 번 더 돌려 개수를 비교하면 누락분을 확인할 수 있습니다.
+
+재실행 시 즐겨찾기는 중복되지 않지만 내 플레이리스트는 다시 생성되므로 `SKIP=my_playlists`를 붙이세요.
+
+## 로그인이 불가능한 경우
+
+아래 두 방법은 원시 액세스 토큰을 얻는 절차입니다. `TIDAL_TOKEN` 으로 넘기면 스크립트가 로그인 대신 그 토큰을 씁니다.
+
+```bash
+export TIDAL_TOKEN='eyJ…'      # Bearer 뒤 문자열
+python3 tidal_backup.py
+```
+
+이렇게 얻은 토큰은 갱신되지 않으며 보통 몇 시간 뒤 만료됩니다. 비밀번호와 같은 효력이 있으니 절대 공유하거나 커밋하지 마세요.
+
+### A. 브라우저에서 토큰 복사
+
+기기 코드 링크가 동작하지 않지만 웹 로그인은 되는 경우에 씁니다.
 
 ![브라우저 개발자 도구에서 토큰 복사](docs/token-web.svg)
 
@@ -46,8 +121,6 @@ Tidal은 즐겨찾기 내보내기 기능을 제공하지 않고, 서드파티 �
 3. **Network** 탭을 선택하고 필터에 `api.tidal`을 입력합니다.
 4. 페이지에서 **My Collection**을 클릭해 요청을 발생시킨 뒤 목록의 아무 요청이나 클릭합니다.
 5. **Headers → Request Headers**에서 `authorization` 값 중 `Bearer ` 뒤 문자열을 복사합니다.
-
-[백업 스크립트 실행](#백업-스크립트-실행)으로 넘어가세요.
 
 ### B. 앱에만 로그인되어 있는 경우 (mitmproxy)
 
@@ -127,61 +200,14 @@ networksetup -setwebproxystate Wi-Fi off
 networksetup -setsecurewebproxystate Wi-Fi off
 ```
 
-### 백업 스크립트 실행
-
-```bash
-export TIDAL_TOKEN='eyJ…'      # Bearer 뒤 문자열
-python3 tidal_backup.py
-```
-
-결과는 `./tidal_backup/` 아래에 생성됩니다.
-
-```
-tidal_backup/
-├── tracks.json / tracks.csv          # 즐겨찾기 트랙 (id, 제목, 아티스트, 앨범, ISRC, 추가일)
-├── albums.json / albums.csv          # 즐겨찾기 앨범 (UPC 포함)
-├── artists.json / artists.csv        # 즐겨찾기 아티스트
-├── playlists.json / playlists.csv    # 즐겨찾기(팔로우)한 플레이리스트
-├── my_playlists.json / .csv          # 내가 만든 플레이리스트 목록
-└── playlist_tracks/                  # 내 플레이리스트별 트랙 목록
-```
-
-JSON은 API 응답 원본이고 CSV는 사람이 보기 좋게 추린 것입니다. 복원에는 JSON을 씁니다.
-
-## 복원
-
-복원할 계정은 웹 로그인이 가능하다고 가정합니다. [방법 A](#a-웹-로그인이-가능한-경우)로 **복원할 계정의** 토큰을 얻으세요.
-
-```bash
-export TIDAL_TOKEN='복원할 계정의 토큰'
-DRY_RUN=1 python3 tidal_restore.py    # 실제 요청 없이 계획만 출력
-python3 tidal_restore.py              # 복원 실행
-```
-
-동작:
-
-- 트랙·앨범·아티스트 즐겨찾기를 50개씩 묶어 추가합니다. 백업이 최신순이므로 뒤집어서 오래된 것부터 넣어 상대 순서를 유지합니다 (추가 날짜 자체는 복원 시점으로 바뀝니다).
-- 팔로우한 플레이리스트는 uuid로 다시 팔로우합니다.
-- 내가 만든 플레이리스트는 같은 제목으로 새로 만들고 트랙을 채웁니다. 원래 uuid는 유지되지 않습니다.
-- 현재 지역에서 사라진 곡은 건너뜁니다.
-
-옵션:
-
-| 환경변수 | 설명 |
-|---|---|
-| `DRY_RUN=1` | 요청을 보내지 않고 무엇을 할지만 출력 |
-| `SKIP=tracks,albums,artists,playlists,my_playlists` | 지정한 항목은 건너뜀 (쉼표 구분) |
-| `TIDAL_API` | 기본값 `https://api.tidal.com/v1` |
-
-복원 후 `tidal_backup.py`를 한 번 더 돌려 개수를 비교하면 누락분을 확인할 수 있습니다.
-
-재실행 시 즐겨찾기는 중복되지 않지만 내 플레이리스트는 다시 생성되므로 `SKIP=my_playlists`를 붙이세요.
-
 ## 문제 해결
 
 | 증상 | 원인 / 해결 |
 |---|---|
-| `HTTP 401` | 토큰 만료. 브라우저 새로고침 또는 앱 재실행 후 다시 복사 |
+| 처음 실행했는데 브라우저가 안 열림 | 출력된 `https://link.tidal.com/…` 주소를 직접 복사해 여세요 |
+| `시간이 초과되었습니다` | 코드는 5분 뒤 만료됩니다. 스크립트를 다시 실행하세요 |
+| `HTTP 401` | 토큰 만료. `python3 tidal_auth.py --logout` 후 재실행. `TIDAL_TOKEN` 사용 중이면 새로 복사 |
+| 엉뚱한 계정에 복원됨 | `python3 tidal_auth.py --logout` 후 복원할 계정으로 다시 로그인 |
 | `HTTP 403` / `404` | 다른 계정의 userId로 요청 중이거나 API 호스트가 다름. `TIDAL_API` 확인 |
 | mitmweb에서 `Request destination unknown` | 브라우저로 8080을 직접 연 것. UI는 8081 |
 | `curl -x … ` 가 `Connection refused` | 8080에 mitmproxy가 없음. `lsof -nP -iTCP:8080 -sTCP:LISTEN`으로 확인, 겹치면 `mitmweb -p 8888` |
@@ -192,7 +218,7 @@ python3 tidal_restore.py              # 복원 실행
 
 ## 주의사항
 
-- **토큰은 비밀번호입니다.** 셸 히스토리에 남기고 싶지 않으면 `read -s TIDAL_TOKEN && export TIDAL_TOKEN` 으로 입력하세요.
+- **토큰은 비밀번호입니다.** `tidal_auth.token` 은 `600` 권한으로 만들어지며 `.gitignore` 에 포함되어 있습니다. `TIDAL_TOKEN` 을 직접 지정할 때는 셸 히스토리에 남지 않도록 `read -s TIDAL_TOKEN && export TIDAL_TOKEN` 으로 입력하세요.
 - `tidal_backup/`에는 개인 청취 데이터가 들어 있습니다. `.gitignore`에 포함되어 있지만 커밋 전에 확인하세요.
 - mitmproxy 작업이 끝나면 프록시를 끄고, 필요하면 키체인에서 mitmproxy CA 인증서도 삭제하세요.
 - Tidal의 비공식 API를 사용합니다. Tidal 측 변경으로 언제든 동작하지 않을 수 있습니다.

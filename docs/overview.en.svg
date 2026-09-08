@@ -21,22 +21,22 @@
 
   <!-- Question -->
   <rect x="330" y="55" width="240" height="56" class="box acc"/>
-  <text x="450" y="78" text-anchor="middle" class="t">Can you log in on the web</text>
-  <text x="450" y="98" text-anchor="middle" class="t">(listen.tidal.com)?</text>
+  <text x="450" y="78" text-anchor="middle" class="t">Can you sign in to</text>
+  <text x="450" y="98" text-anchor="middle" class="t">the Tidal account?</text>
 
   <!-- Yes branch -->
   <path d="M330,83 L200,83 L200,140" class="edge"/>
   <text x="250" y="76" text-anchor="middle" class="lab">Yes</text>
   <rect x="80" y="140" width="240" height="70" class="box ok"/>
-  <text x="200" y="165" text-anchor="middle" class="t">Method A · Browser DevTools</text>
-  <text x="200" y="185" text-anchor="middle" class="sub">Network tab → api.tidal.com request</text>
-  <text x="200" y="201" text-anchor="middle" class="sub">→ copy the authorization header</text>
+  <text x="200" y="165" text-anchor="middle" class="t">Default · device-code sign-in</text>
+  <text x="200" y="185" text-anchor="middle" class="sub">the script opens a link.tidal.com URL</text>
+  <text x="200" y="201" text-anchor="middle" class="sub">→ sign in there and you are done</text>
 
   <!-- No branch -->
   <path d="M570,83 L700,83 L700,140" class="edge"/>
   <text x="650" y="76" text-anchor="middle" class="lab">No (only the app is logged in)</text>
   <rect x="580" y="140" width="240" height="70" class="box warn"/>
-  <text x="700" y="165" text-anchor="middle" class="t">Method B · mitmproxy on the app</text>
+  <text x="700" y="165" text-anchor="middle" class="t">Fallback · mitmproxy on the app</text>
   <text x="700" y="185" text-anchor="middle" class="sub">System proxy + trust the CA cert</text>
   <text x="700" y="201" text-anchor="middle" class="sub">→ relaunch Tidal → copy the header</text>
 
@@ -44,7 +44,7 @@
   <path d="M200,210 L200,250 L450,250 L450,262" class="edge"/>
   <path d="M700,210 L700,250 L450,250" class="edge" style="marker-end:none"/>
   <rect x="340" y="262" width="220" height="44" class="box acc"/>
-  <text x="450" y="290" text-anchor="middle" class="t">TIDAL_TOKEN (Bearer token)</text>
+  <text x="450" y="290" text-anchor="middle" class="t">access token obtained</text>
 
   <!-- Backup script -->
   <path d="M450,306 L450,330" class="edge"/>
@@ -62,9 +62,9 @@
   <path d="M600,428 L660,428" class="edge"/>
   <rect x="660" y="402" width="200" height="52" class="box"/>
   <text x="760" y="422" text-anchor="middle" class="t" font-family="Menlo, monospace" font-size="13">python3 tidal_restore.py</text>
-  <text x="760" y="440" text-anchor="middle" class="sub">run with target account token</text>
+  <text x="760" y="440" text-anchor="middle" class="sub">writes into the signed-in account</text>
   <rect x="660" y="318" width="200" height="56" class="box acc"/>
-  <text x="760" y="340" text-anchor="middle" class="lab">Target account TIDAL_TOKEN</text>
-  <text x="760" y="358" text-anchor="middle" class="lab">(web login works → Method A)</text>
+  <text x="760" y="340" text-anchor="middle" class="lab">Sign in as target account</text>
+  <text x="760" y="358" text-anchor="middle" class="lab">(tidal_auth.py --logout first)</text>
   <path d="M760,374 L760,402" class="edge"/>
 </svg>

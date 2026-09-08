@@ -21,22 +21,22 @@
 
   <!-- Question -->
   <rect x="330" y="55" width="240" height="56" class="box acc"/>
-  <text x="450" y="78" text-anchor="middle" class="t">웹(listen.tidal.com)에서</text>
-  <text x="450" y="98" text-anchor="middle" class="t">로그인이 되나요?</text>
+  <text x="450" y="78" text-anchor="middle" class="t">Tidal 계정에</text>
+  <text x="450" y="98" text-anchor="middle" class="t">로그인할 수 있나요?</text>
 
   <!-- Yes branch -->
   <path d="M330,83 L200,83 L200,140" class="edge"/>
   <text x="250" y="76" text-anchor="middle" class="lab">예</text>
   <rect x="80" y="140" width="240" height="70" class="box ok"/>
-  <text x="200" y="165" text-anchor="middle" class="t">방법 A · 브라우저 개발자 도구</text>
-  <text x="200" y="185" text-anchor="middle" class="sub">Network 탭 → api.tidal.com 요청</text>
-  <text x="200" y="201" text-anchor="middle" class="sub">→ authorization 헤더 복사</text>
+  <text x="200" y="165" text-anchor="middle" class="t">기본 · 기기 코드 로그인</text>
+  <text x="200" y="185" text-anchor="middle" class="sub">스크립트가 link.tidal.com 주소를 열어 줌</text>
+  <text x="200" y="201" text-anchor="middle" class="sub">→ 브라우저에서 로그인하면 끝</text>
 
   <!-- No branch -->
   <path d="M570,83 L700,83 L700,140" class="edge"/>
   <text x="650" y="76" text-anchor="middle" class="lab">아니오 (앱만 로그인됨)</text>
   <rect x="580" y="140" width="240" height="70" class="box warn"/>
-  <text x="700" y="165" text-anchor="middle" class="t">방법 B · mitmproxy로 앱 트래픽 캡처</text>
+  <text x="700" y="165" text-anchor="middle" class="t">대체 · mitmproxy로 앱 트래픽 캡처</text>
   <text x="700" y="185" text-anchor="middle" class="sub">시스템 프록시 + CA 인증서 신뢰</text>
   <text x="700" y="201" text-anchor="middle" class="sub">→ Tidal 앱 재실행 → 헤더 복사</text>
 
@@ -44,7 +44,7 @@
   <path d="M200,210 L200,250 L450,250 L450,262" class="edge"/>
   <path d="M700,210 L700,250 L450,250" class="edge" style="marker-end:none"/>
   <rect x="340" y="262" width="220" height="44" class="box acc"/>
-  <text x="450" y="290" text-anchor="middle" class="t">TIDAL_TOKEN (Bearer 토큰)</text>
+  <text x="450" y="290" text-anchor="middle" class="t">액세스 토큰 확보</text>
 
   <!-- Backup script -->
   <path d="M450,306 L450,330" class="edge"/>
@@ -64,7 +64,7 @@
   <text x="760" y="422" text-anchor="middle" class="t" font-family="Menlo, monospace" font-size="13">python3 tidal_restore.py</text>
   <text x="760" y="440" text-anchor="middle" class="sub">복원할 계정 토큰으로 실행</text>
   <rect x="660" y="318" width="200" height="56" class="box acc"/>
-  <text x="760" y="340" text-anchor="middle" class="lab">복원할 계정의 TIDAL_TOKEN</text>
-  <text x="760" y="358" text-anchor="middle" class="lab">(웹 로그인 가능 → 방법 A)</text>
+  <text x="760" y="340" text-anchor="middle" class="lab">복원할 계정으로 로그인</text>
+  <text x="760" y="358" text-anchor="middle" class="lab">(tidal_auth.py --logout 후 재실행)</text>
   <path d="M760,374 L760,402" class="edge"/>
 </svg>
