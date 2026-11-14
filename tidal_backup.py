@@ -44,10 +44,10 @@ uid, cc = sess["userId"], sess.get("countryCode", "KR")
 print(f"백업 대상: {account_label(API, TOKEN, uid)} country={cc}")
 
 
-def fetch_all(path, limit=50):
+def fetch_all(path, limit=50, order="DATE", direction="DESC"):
     items, offset = [], 0
     while True:
-        page = get(path, countryCode=cc, limit=limit, offset=offset, order="DATE", orderDirection="DESC")
+        page = get(path, countryCode=cc, limit=limit, offset=offset, order=order, orderDirection=direction)
         batch = page.get("items", [])
         items.extend(batch)
         total = page.get("totalNumberOfItems", 0)
@@ -56,6 +56,36 @@ def fetch_all(path, limit=50):
         if not batch or offset >= total:
             return items
         time.sleep(0.3)
+
+
+def entry_key(entry):
+    it = entry.get("item", entry)
+    return it.get("uuid") or it.get("id")
+
+
+def fetch_complete(path):
+    """DATE DESC 로 받되, 누락·중복 없이 최신순 목록을 돌려준다.
+
+    같은 시각에 추가된 항목이 많으면(예: 일괄 복원된 계정) 서버의 DATE 정렬이
+    페이지마다 달라져 페이지 경계에서 중복·누락이 생긴다. 그래서 중복을 걸러내고,
+    개수가 모자라면 NAME 정렬(순서가 고정됨)로 한 번 더 받아 빠진 것을 채운 뒤
+    created 기준으로 다시 최신순 정렬한다.
+    """
+    seen, items = set(), []
+    for e in fetch_all(path):
+        if entry_key(e) not in seen:
+            seen.add(entry_key(e)); items.append(e)
+    total = get(path, countryCode=cc, limit=1).get("totalNumberOfItems", len(items))
+    if len(items) < total:
+        print(f"  DATE 정렬에서 {total - len(items)}개 누락 → NAME 정렬로 보충")
+        for e in fetch_all(path, order="NAME", direction="ASC"):
+            if entry_key(e) not in seen:
+                seen.add(entry_key(e)); items.append(e)
+        # 그래도 모자란 만큼은 목록 API 가 아예 주지 않는 항목이다 — 아래 ID 비교에서 알린다
+    # 정렬은 안정적이므로 같은 시각끼리는 서버가 준 순서를 유지한다
+    if all("created" in e for e in items):
+        items.sort(key=lambda e: e["created"], reverse=True)
+    return items
 
 
 def artists(obj):
@@ -80,9 +110,28 @@ TARGETS = {
                      lambda it: [it["uuid"], it["title"], it.get("numberOfTracks"), None]),
 }
 
+# 목록 API 는 카탈로그에서 사라진 곡 등을 조용히 빼고 돌려준다. ID 목록과 비교해 알린다.
+try:
+    req = urllib.request.Request(f"{API}/users/{uid}/favorites/ids?countryCode={cc}", headers=HEADERS)
+    with urllib.request.urlopen(req, timeout=30) as r:
+        fav_ids = json.load(r)
+except (urllib.error.URLError, ValueError) as e:
+    # 확인용 기능이므로 실패해도 백업은 계속한다
+    print(f"즐겨찾기 ID 목록을 받지 못해 누락 확인을 건너뜁니다: {e}")
+    fav_ids = {}
+ID_TYPES = {"tracks": "TRACK", "albums": "ALBUM", "artists": "ARTIST", "playlists": "PLAYLIST"}
+unavailable = {}
+
 for name, (path, cols, rowfn) in TARGETS.items():
     print(f"[{name}]")
-    raw = fetch_all(path)
+    raw = fetch_complete(path)
+    if name in ID_TYPES:
+        got = {str(entry_key(e)) for e in raw}
+        missing = [str(i) for i in fav_ids.get(ID_TYPES[name], []) if str(i) not in got]
+        if missing:
+            unavailable[name] = missing
+            print(f"  경고: 즐겨찾기 {len(missing)}개는 목록에 나오지 않아 저장하지 못했습니다"
+                  f" (카탈로그에서 삭제됐거나 이용 불가) → unavailable_ids.json")
     (OUT / f"{name}.json").write_text(json.dumps(raw, ensure_ascii=False, indent=2))
     with open(OUT / f"{name}.csv", "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f); w.writerow(cols)
@@ -92,12 +141,19 @@ for name, (path, cols, rowfn) in TARGETS.items():
             row = rowfn(it); row[-1] = entry.get("created")
             w.writerow(row)
 
+if unavailable:
+    (OUT / "unavailable_ids.json").write_text(json.dumps(unavailable, indent=2))
+elif (OUT / "unavailable_ids.json").exists():
+    (OUT / "unavailable_ids.json").unlink()  # 이전 실행의 결과가 남아 오해를 부르지 않도록
+
 # 2. 내 플레이리스트 각각의 트랙까지 저장
 pl_dir = OUT / "playlist_tracks"; pl_dir.mkdir(exist_ok=True)
 for entry in json.loads((OUT / "my_playlists.json").read_text()):
     pl = entry.get("item", entry)
     print(f"[playlist] {pl['title']}")
-    tracks = fetch_all(f"playlists/{pl['uuid']}/items", limit=100)
+    # 플레이리스트는 사용자가 정한 곡 순서(INDEX)가 곧 내용이다.
+    # DATE DESC 로 받으면 순서가 뒤집힌 채 저장되어 복원 시 역순 플레이리스트가 만들어진다.
+    tracks = fetch_all(f"playlists/{pl['uuid']}/items", limit=100, order="INDEX", direction="ASC")
     safe = "".join(c if c.isalnum() or c in " _-" else "_" for c in pl["title"])[:60]
     (pl_dir / f"{safe}_{pl['uuid'][:8]}.json").write_text(json.dumps(tracks, ensure_ascii=False, indent=2))
     with open(pl_dir / f"{safe}_{pl['uuid'][:8]}.csv", "w", newline="", encoding="utf-8-sig") as f:

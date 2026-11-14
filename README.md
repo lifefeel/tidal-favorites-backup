@@ -81,10 +81,13 @@ tidal_backup/
 ├── artists.json / artists.csv        # favorite artists
 ├── playlists.json / playlists.csv    # playlists you follow
 ├── my_playlists.json / .csv          # playlists you created
-└── playlist_tracks/                  # track list for each of your playlists
+├── playlist_tracks/                  # track list for each of your playlists
+└── unavailable_ids.json              # only if some favorites could not be listed
 ```
 
 JSON files are the raw API responses; CSVs are a human-readable subset. Restore uses the JSON.
+
+Tidal's list API silently leaves out favorites whose track or album has been removed from the catalog. The script compares each list with the account's raw favorite IDs and, if anything is missing, prints a warning and writes those IDs to `unavailable_ids.json`. They can't be restored — Tidal returns 404 for them — but you know what was lost.
 
 ## Restore
 
@@ -110,7 +113,7 @@ Before writing anything, the script prints the account it is about to restore in
 
 What it does:
 
-- Adds track/album/artist favorites in batches of 50. The backup is newest-first, so it's reversed to preserve relative order (the "date added" itself becomes the restore time).
+- Adds track/album/artist favorites one at a time, oldest first, so the app's "recently added" order matches the source account (the "date added" itself becomes the restore time). Items added in one request would all share the same timestamp and lose their order, so batching is opt-in via `BATCH`.
 - Re-follows playlists by UUID.
 - Recreates your own playlists with the same titles and fills them with tracks. Original UUIDs are not preserved.
 - Skips tracks no longer available in your region.
@@ -121,6 +124,7 @@ Options:
 |---|---|
 | `DRY_RUN=1` | Print what would be done without sending requests |
 | `SKIP=tracks,albums,artists,playlists,my_playlists` | Comma-separated categories to skip |
+| `BATCH=50` | Items per request (default `1`). Faster, but items in the same request lose their relative "recently added" order |
 | `TIDAL_API` | Defaults to `https://api.tidal.com/v1` |
 
 Run `tidal_backup.py` again afterwards and compare counts to spot anything that was skipped.
