@@ -44,10 +44,10 @@ uid, cc = sess["userId"], sess.get("countryCode", "KR")
 print(f"백업 대상: {account_label(API, TOKEN, uid)} country={cc}")
 
 
-def fetch_all(path, limit=50):
+def fetch_all(path, limit=50, order="DATE", direction="DESC"):
     items, offset = [], 0
     while True:
-        page = get(path, countryCode=cc, limit=limit, offset=offset, order="DATE", orderDirection="DESC")
+        page = get(path, countryCode=cc, limit=limit, offset=offset, order=order, orderDirection=direction)
         batch = page.get("items", [])
         items.extend(batch)
         total = page.get("totalNumberOfItems", 0)
@@ -97,7 +97,9 @@ pl_dir = OUT / "playlist_tracks"; pl_dir.mkdir(exist_ok=True)
 for entry in json.loads((OUT / "my_playlists.json").read_text()):
     pl = entry.get("item", entry)
     print(f"[playlist] {pl['title']}")
-    tracks = fetch_all(f"playlists/{pl['uuid']}/items", limit=100)
+    # 플레이리스트는 사용자가 정한 곡 순서(INDEX)가 곧 내용이다.
+    # DATE DESC 로 받으면 순서가 뒤집힌 채 저장되어 복원 시 역순 플레이리스트가 만들어진다.
+    tracks = fetch_all(f"playlists/{pl['uuid']}/items", limit=100, order="INDEX", direction="ASC")
     safe = "".join(c if c.isalnum() or c in " _-" else "_" for c in pl["title"])[:60]
     (pl_dir / f"{safe}_{pl['uuid'][:8]}.json").write_text(json.dumps(tracks, ensure_ascii=False, indent=2))
     with open(pl_dir / f"{safe}_{pl['uuid'][:8]}.csv", "w", newline="", encoding="utf-8-sig") as f:

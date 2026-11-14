@@ -117,6 +117,8 @@ if "my_playlists" not in SKIP:
         pl = item_of(e)
         title, uuid = pl["title"], pl["uuid"]
         matches = list(pl_dir.glob(f"*_{uuid[:8]}.json"))
+        # 백업이 INDEX ASC(원래 곡 순서)로 저장하므로 파일 순서 그대로 추가한다.
+        # load()처럼 뒤집으면 안 된다 — 여기서 뒤집으면 역순 플레이리스트가 된다.
         tracks = json.loads(matches[0].read_text()) if matches else []
         ids = [item_of(t)["id"] for t in tracks if item_of(t).get("id")]
         print(f"  '{title}' ({len(ids)}곡)")
