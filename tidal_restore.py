@@ -11,6 +11,7 @@ Tidal 즐겨찾기 복원 스크립트 (tidal_backup.py 출력 폴더 기준)
   DRY_RUN=1        실제 요청 없이 무엇을 할지 출력만
   YES=1            계정 확인 프롬프트를 건너뜀 (자동화용)
   SKIP=tracks,albums   건너뛸 항목 (tracks, albums, artists, playlists, my_playlists)
+  BATCH=50         한 번에 추가할 개수 (기본 1 — 최근 추가순을 원본과 같게 유지)
 """
 import json, os, sys, time
 from pathlib import Path
@@ -23,7 +24,9 @@ API = os.environ.get("TIDAL_API", "https://api.tidal.com/v1")
 SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "tidal_backup")
 DRY = os.environ.get("DRY_RUN") == "1"
 SKIP = set(filter(None, os.environ.get("SKIP", "").split(",")))
-BATCH = 50
+# 한 번에 여러 개를 추가하면 모두 같은 '추가 시각'을 받아 앱의 최근 추가순이 뒤섞인다.
+# 원래 순서를 지키려고 기본은 1개씩 추가한다. 순서가 상관없으면 BATCH=50 으로 빠르게.
+BATCH = max(1, int(os.environ.get("BATCH", "1") or 1))
 HEADERS = {"Authorization": f"Bearer {TOKEN}", "User-Agent": "Mozilla/5.0"}
 
 
@@ -70,9 +73,9 @@ def post_batches(label, path, key, ids):
         r = call("POST", path, {key: ",".join(map(str, chunk)), "onArtifactNotFound": "SKIP"}, countryCode=CC)
         if "_error" in r:
             print(f"  실패 {i}-{i+len(chunk)}: {r['_error']} {r.get('_body','')[:200]}")
-        else:
+        elif (i + len(chunk)) % 50 == 0 or i + len(chunk) == len(ids):
             print(f"  {i+len(chunk)}/{len(ids)}")
-        time.sleep(0.5)
+        time.sleep(0.5 if BATCH > 1 else 0.3)
 
 
 sess = call("GET", "sessions")
